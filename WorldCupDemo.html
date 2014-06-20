@@ -1,0 +1,292 @@
+<html>
+<meta name="viewport" content="width=device-width">
+
+
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.3/jquery.min.js"></script>
+<link
+    rel="stylesheet"
+    type="text/css"
+    href="http://cloud.github.com/downloads/lafeber/world-flags-sprite/flags32.css"
+/>
+<link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
+<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+  <script src='nprogress.js'></script>
+  <link href='nprogress.css' rel='stylesheet' />
+<link href='http://fonts.googleapis.com/css?family=Open+Sans:300' rel='stylesheet' type='text/css'>
+<style>
+.centered
+{
+    text-align:center;
+}
+.f32{
+
+	margin-right: 38px;
+}
+
+.hint{
+
+	visibility: hidden;
+}
+.btn{
+
+	 min-width: 200px;
+    max-width: 300px;
+}
+.body{
+    padding-bottom: 30px;
+
+
+}
+</style>
+	<script>
+
+
+window.lim = 100;
+window.off = 0;
+window.club;
+window.player;
+window.players = [];
+
+	var counter = -1;
+	imageLock = 0;
+
+	$(document).ready(function () {
+
+			NProgress.start()
+	        $.ajax({
+	                url: 'http://worldcup.kimonolabs.com/api/players?limit=100&apikey=775abed408c7df9cb5be674892707b1d',
+	                type: 'GET',
+	                success: function handleData(data) {
+	                		window.players = data;
+	                		driver();
+	                		NProgress.done()
+	                }
+	        })
+
+
+	        	 
+
+	});
+
+	function getMorePlayers(){
+
+
+		
+
+			console.log("???????")
+			if(window.off > 700){
+				window.lim = 0;
+				return
+			}
+
+			if(window.off == 700){
+				window.lim = 36;
+			} else {
+				window.off = window.off + window.lim;
+			}
+console.log(window.off)
+			console.log(window.lim)
+
+			 $.ajax({
+	                url: 'http://worldcup.kimonolabs.com/api/players?limit='+window.lim+'&offset='+window.off+'&apikey=775abed408c7df9cb5be674892707b1d',
+	                type: 'GET',
+	                success: function handleData(data) {
+	                		console.log("_+_+_+_+_+_+_+_")
+	                		console.log(data)
+	                				if(window.off < 736){
+	                		        window.players= $.merge( window.players, data );
+	                		    }
+
+	                }
+	        })
+			
+	}
+
+
+	function driver() {
+			imageLock=0;
+				        window.player = getPlayer();
+
+	        $("#mainDiv").empty();
+	        $("#mainDiv").html('<p class="lead"><span id = "part1" >Ready?</span> <span id ="part2"></span></p>  <div class="centered" ><ul class="f32" id="flags"></ul>')
+	       $("#buttonHolder").html('<p id ="buttonHolder"><a class="btn btn-lg btn-success" href="javascript:driver()" role="button">Play!</a></p>')
+	       	
+	        NProgress.done()
+	        console.log(window.player)
+	        console.log(window.player.firstName + " " + window.player.lastName)
+	        //generateFlag(window.player.nationality)
+	         $("#flags").append('<span>'+window.player.nationality+'</span>')
+
+
+	        getClub(window.player.clubId)
+	        if(window.player.clubId==null){
+	        	driver();
+	        }
+
+
+
+
+	
+
+
+	}
+
+	function shuffle(o){ //v1.0
+    for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+    return o;
+};
+
+
+	 //ajax. returns player object.
+	function getPlayer() {
+			console.log(window.players)
+			window.players = shuffle(window.players);
+		
+	        return window.players[counter++]
+
+	}
+
+	
+	function getClub(id) {
+
+	        $.ajax({
+	                url: 'http://worldcup.kimonolabs.com/api/clubs/' + id + '?apikey=775abed408c7df9cb5be674892707b1d',
+	                type: 'GET',
+	                success: function handleData(x) {
+	                		if(x!==null){
+	                        window.club = x;
+	                         
+
+	                        if(!imageLock){
+	                        getTeamLogo();
+	                        imageLock++;
+	                    	
+	                    	}
+	                    	$("buttonHolder").html('<p id ="buttonHolder"><a class="btn btn-lg btn-success" href="javascript:driver()" role="button">Play!</a></p>')
+	                    } else {
+
+	                    	driver()
+	                    }
+
+
+	                }
+	        })
+
+
+	}
+
+	function getTeamLogo(){
+		  $.ajax({
+	                url: 'http://worldcup.kimonolabs.com/api/teams/' + window.player.teamId + '?apikey=775abed408c7df9cb5be674892707b1d',
+	                type: 'GET',
+	                success: function handleData(x) {
+	                 $("#part1").empty()
+	       			 $("#part2").empty()
+	       			 $("#part1").html("This player is a <b>" + window.player.position.toLowerCase() + "</b>")
+	       			 $("#part2").html("for <b>" + window.club.name + "</b>")
+	       			 console.log(window.player.firstName)
+	       			 $('#mainDiv').append('<img src='+x.logo+'></img>')
+	       			 $('#mainDiv').append('<br><h4 id="hintButton" ><a href="javascript:showHint();" >Show Hint</a></h4>')
+
+	       			 var hintGen = Math.floor(Math.random() * (3 - 0) + 0);
+	       			 console.log(hintGen)
+	       			 if(hintGen == 0){
+	       			 $('#mainDiv').append('<div  id="hint" class="hint">This player is '+window.player.age+' years old</div>')
+
+	       			 }else if(hintGen == 1){
+	       			 $('#mainDiv').append('<div  id="hint" class="hint">This player was born in '+window.player.birthCity+'</div>')
+
+	       			 }else if(hintGen == 2){
+	       			 $('#mainDiv').append('<div  id="hint" class="hint">This player has scored '+window.player.goals+' goals this world cup</div>')
+
+
+	       			 }else if(hintGen == 3){
+	       			// $('#mainDiv').append('<div  id="hint" class="hint">Bonus Clue: This players first name is '+window.player.firstName+'</div>')
+	       			 $('#mainDiv').append('<div  id="hint" class="hint">Big Clue! This players first name is '+window.player.firstName+' </div>')
+
+	       			 }
+
+
+
+	      			 $("#buttonHolder").html('<a class="btn btn-lg btn-success" href="javascript:showAnswer()" role="button">Answer</a>')
+	                }
+	        })
+
+
+	}
+
+
+	function showHint(){
+
+		hint = document.getElementById('hint');
+		 hint.style.visibility = "visible" ;
+		 $('#hintButton').remove();
+
+
+	}
+	function showAnswer() {
+	        console.log(window.player.firstName)
+	        $("#mainDiv").empty();
+	        $("#mainDiv").html('<img src="' + window.player.image + '"></img>');
+
+	        $("#mainDiv").append("<h1>" + window.player.firstName + " " + window.player.lastName + "</h1>");
+	        $("#buttonHolder").html('<a class="btn btn-lg btn-success" href="javascript:driver()" role="button">Play!</a>')
+	        getMorePlayers()
+	        console.log("PLAYERS LENGTH!!!!!!!"+window.players.length)
+
+	}
+/*
+	function generateFlag(country) {
+
+
+	        var result = countryCodes.filter(function (v) {
+	                 v.name === country; // filter out appropriate one
+	        })[0].code; // get result and access foo property
+
+	        if (result!=undefinied){
+	        	return country;
+	        } else {
+	        	retrun
+	        }
+	        $("#flags").empty()
+	        $("#flags").append('<li class ="flag ' + result + '"></li>');
+	        $("#flags").append('<span>'+country+'</span>')
+	}
+	*/
+	</script>
+
+
+	  <body class="body">
+
+
+	<div class="container">
+ <div  class=" centered">        
+ 	<img style="height:60;width:70;display: block;  margin-left: auto;
+    margin-right: auto;
+    padding-bottom: -17px; 
+    " src="world-cup-logo-2014.jpg"></img>
+<h1 class="text-muted" style=" color:black;font-family: 'Open Sans', sans-serif;">Name the Player - World Cup Edition</h1>
+      </div>
+
+      <div  class="jumbotron centered">
+      	<div id ="mainDiv" style="font-family: 'Open Sans', sans-serif">
+        <p class="lead"><span id = "part1" >Test your football trivia!</span> </p>
+                <p class="lead"><span id = "part1" >Loading...</span> </p>
+
+     		
+  
+		</ul>
+	</div>
+	</div>
+		<div id="buttonHolder" class="btnHolder centered" style="font-family: 'Open Sans', sans-serif; ">
+
+    </div>
+      </div>
+
+      
+    </div>
+	
+ 
+  </body>
+
+</html>
